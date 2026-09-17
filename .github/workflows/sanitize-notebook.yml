@@ -1,0 +1,81 @@
+name: Sanitize notebook
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  sanitize:
+    if: ${{ github.actor != 'github-actions[bot]' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Clean public notebook
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          path = Path('Universe_3D_Explorer.ipynb')
+          with path.open(encoding='utf-8') as f:
+              nb = json.load(f)
+
+          cleaned = []
+          for cell in nb.get('cells', []):
+              source = cell.get('source', [])
+              text = ''.join(source) if isinstance(source, list) else str(source)
+              if not text.strip():
+                  continue
+              if cell.get('cell_type') == 'code':
+                  cell['outputs'] = []
+                  cell['execution_count'] = None
+              # Remove transient/editor metadata while retaining normal notebook content.
+              meta = cell.get('metadata', {})
+              for key in ['collapsed', 'scrolled', 'ExecuteTime', 'execution']:
+                  meta.pop(key, None)
+              cell['metadata'] = meta
+              cleaned.append(cell)
+
+          nb['cells'] = cleaned
+          nb['metadata'] = {
+              'kernelspec': {
+                  'display_name': 'Python 3',
+                  'language': 'python',
+                  'name': 'python3'
+              },
+              'language_info': {
+                  'name': 'python',
+                  'version': '3.12',
+                  'mimetype': 'text/x-python',
+                  'codemirror_mode': {'name': 'ipython', 'version': 3},
+                  'pygments_lexer': 'ipython3',
+                  'nbconvert_exporter': 'python',
+                  'file_extension': '.py'
+              }
+          }
+          nb['nbformat'] = 4
+          nb['nbformat_minor'] = nb.get('nbformat_minor', 5)
+
+          with path.open('w', encoding='utf-8') as f:
+              json.dump(nb, f, indent=1, ensure_ascii=False)
+              f.write('\n')
+
+          # Validate the rewritten notebook.
+          with path.open(encoding='utf-8') as f:
+              check = json.load(f)
+          assert check['nbformat'] == 4
+          assert check['cells']
+          print(f"sanitized {len(check['cells'])} cells; size={path.stat().st_size} bytes")
+          PY
+      - name: Commit cleaned notebook
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add Universe_3D_Explorer.ipynb
+          git commit -m "Clean notebook for public release" || exit 0
+          git push
