@@ -20,7 +20,7 @@ The notebook uses explicit coordinate frames and units so that approximate teach
 
 ## Run locally
 
-Python 3.11 or 3.12 is recommended. Open `Universe_3D_Explorer.ipynb` in Jupyter Notebook or JupyterLab and run the numbered cells in order. The first code cell installs the required packages into the active notebook kernel.
+Python 3.11 or 3.12 is recommended. Open `notebooks/Universe_3D_Explorer.ipynb` in Jupyter Notebook or JupyterLab and run the numbered cells in order. The first code cell installs the required packages into the active notebook kernel.
 
 The default workflow uses embedded data and models. Optional online sections are disabled initially. They can be enabled in the controls cell:
 
@@ -46,8 +46,9 @@ Sources and provenance are documented inside the notebook, including JPL Solar S
 
 ```text
 Universe-3D-Explorer/
-├── Universe_3D_Explorer.ipynb
 ├── README.md
+├── notebooks/
+│   └── Universe_3D_Explorer.ipynb
 ├── requirements.txt
 └── .gitignore
 ```
